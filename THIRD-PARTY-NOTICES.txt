@@ -1,0 +1,22 @@
+Lazy Channel Packer Third-Party Notices
+
+This file lists third-party software used by Lazy Channel Packer.
+
+Magick.NET
+Copyright Dirk Lemstra
+Project: https://github.com/dlemstra/Magick.NET
+License: Apache License 2.0
+
+ImageMagick
+Copyright ImageMagick Studio LLC
+Project: https://imagemagick.org/
+License: ImageMagick License
+
+.NET
+Copyright .NET Foundation and contributors
+Project: https://dotnet.microsoft.com/
+License: MIT and other notices included with the .NET runtime distribution.
+
+These third-party components are not covered by the Lazy Channel Packer
+Source-Available Non-Commercial License. They remain available under their
+respective licenses.
