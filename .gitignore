@@ -9,6 +9,9 @@ obj/
 *.userosscache
 *.sln.docstates
 
+# Local agent/project guidance
+AGENTS.md
+
 # Rider
 .idea/
 

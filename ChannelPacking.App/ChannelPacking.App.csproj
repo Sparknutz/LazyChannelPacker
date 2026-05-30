@@ -13,13 +13,13 @@
     <AssemblyName>LazyChannelPacker</AssemblyName>
     <Product>Lazy Channel Packer</Product>
     <AssemblyTitle>Lazy Channel Packer</AssemblyTitle>
-    <Authors>Spark</Authors>
-    <Company>Spark</Company>
+    <Authors>Sparknutz</Authors>
+    <Company>Sparknutz</Company>
     <Version>1.0.0</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <InformationalVersion>1.0.0</InformationalVersion>
-    <Copyright>Copyright (c) 2026 Spark</Copyright>
+    <Copyright>Copyright (c) 2026 Sparknutz</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
