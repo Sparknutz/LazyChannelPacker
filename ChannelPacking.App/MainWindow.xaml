@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ChannelPacking.App"
         Title="Lazy Channel Packer"
+        Icon="Assets/LazyChannelPacker.ico"
         Height="780"
         MinHeight="680"
         Width="1180"

@@ -10,6 +10,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\LazyChannelPacker.ico</ApplicationIcon>
     <AssemblyName>LazyChannelPacker</AssemblyName>
     <Product>Lazy Channel Packer</Product>
     <AssemblyTitle>Lazy Channel Packer</AssemblyTitle>
@@ -25,6 +26,11 @@
   <ItemGroup>
     <None Include="..\LICENSE.txt" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     <None Include="..\THIRD-PARTY-NOTICES.txt" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\LazyChannelPacker.ico" />
+    <Resource Include="Assets\LazyChannelPackerIcon.png" />
   </ItemGroup>
 
 </Project>
