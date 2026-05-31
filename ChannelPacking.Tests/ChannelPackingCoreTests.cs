@@ -58,6 +58,16 @@ public sealed class ChannelPackingCoreTests
     }
 
     [Fact]
+    public void EddsBcr_WhenRoughnessIsMissing_UsesOpaqueAlpha()
+    {
+        var baseColor = CreateImage(1, 1, 1, 2, 3, 4);
+
+        var packed = ChannelPacker.PackEddsBcr(baseColor, null);
+
+        Assert.Equal(new byte[] { 1, 2, 3, 255 }, packed.Rgba);
+    }
+
+    [Fact]
     public void EddsNmo_UsesNormalRgMetallicRedAndAoRed()
     {
         var normal = CreateImage(1, 1, 10, 20, 30, 40);
@@ -126,6 +136,54 @@ public sealed class ChannelPackingCoreTests
             Assert.EndsWith("painted_metal_NMO.png", result.NmoPath);
             Assert.Equal(OutputFormat.Png, codec.Saved[0].Format);
             Assert.Equal(OutputFormat.Png, codec.Saved[1].Format);
+        }
+        finally
+        {
+            Directory.Delete(outputDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void EddsPacker_PackBcrAndSave_SavesOnlyBcrWithOptionalRoughness()
+    {
+        var codec = new CapturingCodec();
+        var outputDirectory = Path.Combine(Path.GetTempPath(), $"channel-packing-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(outputDirectory);
+
+        try
+        {
+            var image = CreateImage(1, 1, 1, 2, 3, 4);
+            var packer = new EddsPacker(codec);
+
+            var path = packer.PackBcrAndSave(image, null, "single output", outputDirectory);
+
+            Assert.EndsWith("single_output_BCR.png", path);
+            Assert.Single(codec.Saved);
+            Assert.Equal(new byte[] { 1, 2, 3, 255 }, codec.Saved[0].Image.Rgba);
+        }
+        finally
+        {
+            Directory.Delete(outputDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void EddsPacker_PackNmoAndSave_SavesOnlyNmo()
+    {
+        var codec = new CapturingCodec();
+        var outputDirectory = Path.Combine(Path.GetTempPath(), $"channel-packing-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(outputDirectory);
+
+        try
+        {
+            var normal = CreateImage(1, 1, 10, 20, 30, 40);
+            var packer = new EddsPacker(codec);
+
+            var path = packer.PackNmoAndSave(normal, null, null, "single output", outputDirectory);
+
+            Assert.EndsWith("single_output_NMO.png", path);
+            Assert.Single(codec.Saved);
+            Assert.Equal(new byte[] { 10, 20, 0, 255 }, codec.Saved[0].Image.Rgba);
         }
         finally
         {

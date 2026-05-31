@@ -273,6 +273,7 @@
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,14,0,0">
                             <Button Content="Choose Image" Click="ChooseUnpackImageClick" />
+                            <Button Content="Clear Image" Click="ClearUnpackImageClick" />
                             <Button Content="Unpack Image" Click="UnpackImageClick" />
                         </StackPanel>
 
@@ -377,7 +378,10 @@
                                     <ComboBoxItem Content="Alpha" />
                                 </ComboBox>
                                 <CheckBox x:Name="PackRedInvert" Grid.Row="4" Margin="0,10,0,0" Content="Invert" />
-                                <Button Grid.Row="5" Margin="0,10,0,0" Content="Choose R" Tag="Red" Click="ChoosePackSlotClick" />
+                                <UniformGrid Grid.Row="5" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose R" Tag="Red" Click="ChoosePackSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Red" Click="ClearPackSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -403,7 +407,10 @@
                                     <ComboBoxItem Content="Alpha" />
                                 </ComboBox>
                                 <CheckBox x:Name="PackGreenInvert" Grid.Row="4" Margin="0,10,0,0" Content="Invert" />
-                                <Button Grid.Row="5" Margin="0,10,0,0" Content="Choose G" Tag="Green" Click="ChoosePackSlotClick" />
+                                <UniformGrid Grid.Row="5" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose G" Tag="Green" Click="ChoosePackSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Green" Click="ClearPackSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -429,7 +436,10 @@
                                     <ComboBoxItem Content="Alpha" />
                                 </ComboBox>
                                 <CheckBox x:Name="PackBlueInvert" Grid.Row="4" Margin="0,10,0,0" Content="Invert" />
-                                <Button Grid.Row="5" Margin="0,10,0,0" Content="Choose B" Tag="Blue" Click="ChoosePackSlotClick" />
+                                <UniformGrid Grid.Row="5" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose B" Tag="Blue" Click="ChoosePackSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Blue" Click="ClearPackSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -455,7 +465,10 @@
                                     <ComboBoxItem Content="Alpha" />
                                 </ComboBox>
                                 <CheckBox x:Name="PackAlphaInvert" Grid.Row="4" Margin="0,10,0,0" Content="Invert" />
-                                <Button Grid.Row="5" Margin="0,10,0,0" Content="Choose A" Tag="Alpha" Click="ChoosePackSlotClick" />
+                                <UniformGrid Grid.Row="5" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose A" Tag="Alpha" Click="ChoosePackSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Alpha" Click="ClearPackSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
                     </UniformGrid>
@@ -487,7 +500,7 @@
 
                     <StackPanel Grid.Row="0" Margin="0,0,0,18">
                         <TextBlock FontSize="20" FontWeight="SemiBold" Text="Enfusion Packer" />
-                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource TextSecondaryBrush}" Text="Build BCR from Base Color RGB plus Roughness alpha, and NMO from Normal RG plus optional Metallic and AO." />
+                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource TextSecondaryBrush}" Text="Build BCR from Base Color RGB plus optional Roughness alpha, and NMO from Normal RG plus optional Metallic and AO." />
                     </StackPanel>
 
                     <UniformGrid Grid.Row="1" Columns="5" Rows="1" VerticalAlignment="Top">
@@ -506,7 +519,10 @@
                                                     Style="{StaticResource PreviewBox}">
                                     <Image x:Name="EddsBaseColorPreview" Stretch="Uniform" />
                                 </local:SquareBorder>
-                                <Button Grid.Row="3" Margin="0,10,0,0" Content="Choose" Tag="BaseColor" Click="ChooseEddsSlotClick" />
+                                <UniformGrid Grid.Row="3" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose" Tag="BaseColor" Click="ChooseEddsSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="BaseColor" Click="ClearEddsSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -525,7 +541,10 @@
                                                     Style="{StaticResource PreviewBox}">
                                     <Image x:Name="EddsNormalPreview" Stretch="Uniform" />
                                 </local:SquareBorder>
-                                <Button Grid.Row="3" Margin="0,10,0,0" Content="Choose" Tag="Normal" Click="ChooseEddsSlotClick" />
+                                <UniformGrid Grid.Row="3" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose" Tag="Normal" Click="ChooseEddsSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Normal" Click="ClearEddsSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -538,13 +557,16 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock FontWeight="SemiBold" Text="Roughness" />
-                                <TextBlock x:Name="EddsRoughnessPathText" Grid.Row="1" Style="{StaticResource SlotStatusText}" Text="Required." />
+                                <TextBlock x:Name="EddsRoughnessPathText" Grid.Row="1" Style="{StaticResource SlotStatusText}" Text="Optional." />
                                 <local:SquareBorder x:Name="EddsRoughnessPreviewBox"
                                                     Grid.Row="2"
                                                     Style="{StaticResource PreviewBox}">
                                     <Image x:Name="EddsRoughnessPreview" Stretch="Uniform" />
                                 </local:SquareBorder>
-                                <Button Grid.Row="3" Margin="0,10,0,0" Content="Choose" Tag="Roughness" Click="ChooseEddsSlotClick" />
+                                <UniformGrid Grid.Row="3" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose" Tag="Roughness" Click="ChooseEddsSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Roughness" Click="ClearEddsSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -563,7 +585,10 @@
                                                     Style="{StaticResource PreviewBox}">
                                     <Image x:Name="EddsMetallicPreview" Stretch="Uniform" />
                                 </local:SquareBorder>
-                                <Button Grid.Row="3" Margin="0,10,0,0" Content="Choose" Tag="Metallic" Click="ChooseEddsSlotClick" />
+                                <UniformGrid Grid.Row="3" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose" Tag="Metallic" Click="ChooseEddsSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="Metallic" Click="ClearEddsSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
@@ -582,7 +607,10 @@
                                                     Style="{StaticResource PreviewBox}">
                                     <Image x:Name="EddsAoPreview" Stretch="Uniform" />
                                 </local:SquareBorder>
-                                <Button Grid.Row="3" Margin="0,10,0,0" Content="Choose" Tag="AmbientOcclusion" Click="ChooseEddsSlotClick" />
+                                <UniformGrid Grid.Row="3" Columns="2" Margin="0,10,0,0">
+                                    <Button Content="Choose" Tag="AmbientOcclusion" Click="ChooseEddsSlotClick" MinWidth="0" Padding="6,7" Margin="0,0,4,0" />
+                                    <Button Content="Clear" Tag="AmbientOcclusion" Click="ClearEddsSlotClick" MinWidth="0" Padding="6,7" Margin="4,0,0,0" />
+                                </UniformGrid>
                             </Grid>
                         </Border>
                     </UniformGrid>
@@ -599,10 +627,11 @@
                         <TextBox x:Name="EddsOutputNameTextBox" Grid.Row="1" Margin="0,6,0,0" />
                         <TextBlock Grid.Row="2" Margin="0,6,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}"
-                                   Text="Saves two files in the Base Color folder: &lt;name&gt;_BCR.png and &lt;name&gt;_NMO.png." />
+                                   Text="Saves requested files as &lt;name&gt;_BCR.png and/or &lt;name&gt;_NMO.png." />
 
                         <Grid Grid.Row="3" Margin="0,18,0,0">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -611,8 +640,12 @@
                                 <Button Content="Pack BCR / NMO" Click="PackEddsClick" />
                                 <Button Content="Clear Images and File Name" Click="ClearEddsSlotsClick" />
                             </StackPanel>
-                            <ProgressBar x:Name="EddsProgress" Grid.Row="1" Height="8" Margin="0,16,0,0" />
-                            <TextBlock x:Name="EddsFeedbackText" Grid.Row="2" Margin="0,12,0,0" Foreground="{StaticResource TextSecondaryBrush}" />
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="Pack BCR Only" Click="PackEddsBcrOnlyClick" />
+                                <Button Content="Pack NMO Only" Click="PackEddsNmoOnlyClick" />
+                            </StackPanel>
+                            <ProgressBar x:Name="EddsProgress" Grid.Row="2" Height="8" Margin="0,16,0,0" />
+                            <TextBlock x:Name="EddsFeedbackText" Grid.Row="3" Margin="0,12,0,0" Foreground="{StaticResource TextSecondaryBrush}" />
                         </Grid>
                     </Grid>
                 </Grid>

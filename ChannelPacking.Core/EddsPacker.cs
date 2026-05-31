@@ -13,10 +13,7 @@ public sealed class EddsPacker
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!Directory.Exists(request.OutputDirectory))
-        {
-            throw new ChannelPackingException("The Base Color directory could not be found.");
-        }
+        EnsureOutputDirectoryExists(request.OutputDirectory);
 
         var outputPaths = GetOutputPaths(request.OutputDirectory, request.OutputName);
 
@@ -32,6 +29,45 @@ public sealed class EddsPacker
         return outputPaths;
     }
 
+    public string PackBcrAndSave(
+        TextureImage baseColor,
+        TextureImage? roughness,
+        string outputName,
+        string outputDirectory,
+        bool overwriteExisting = false)
+    {
+        EnsureOutputDirectoryExists(outputDirectory);
+        ValidateBcrInputs(baseColor, roughness);
+
+        var outputPath = GetOutputPaths(outputDirectory, outputName).BcrPath;
+        EnsureCanWriteOutput(outputPath, overwriteExisting);
+
+        var bcr = ChannelPacker.PackEddsBcr(baseColor, roughness);
+        _codec.Save(bcr, outputPath, OutputFormat.Png);
+
+        return outputPath;
+    }
+
+    public string PackNmoAndSave(
+        TextureImage normal,
+        TextureImage? metallic,
+        TextureImage? ambientOcclusion,
+        string outputName,
+        string outputDirectory,
+        bool overwriteExisting = false)
+    {
+        EnsureOutputDirectoryExists(outputDirectory);
+        ValidateNmoInputs(normal, metallic, ambientOcclusion);
+
+        var outputPath = GetOutputPaths(outputDirectory, outputName).NmoPath;
+        EnsureCanWriteOutput(outputPath, overwriteExisting);
+
+        var nmo = ChannelPacker.PackEddsNmo(normal, metallic, ambientOcclusion);
+        _codec.Save(nmo, outputPath, OutputFormat.Png);
+
+        return outputPath;
+    }
+
     public static EddsPackResult GetOutputPaths(string outputDirectory, string outputName)
     {
         var sanitizedName = ImageValidation.SanitizeFileNameStem(outputName, "Output file name");
@@ -42,22 +78,37 @@ public sealed class EddsPacker
 
     private static void ValidateAllEddsDimensions(EddsPackRequest request)
     {
-        request.BaseColor.Validate();
-        request.Normal.Validate();
-        request.Roughness.Validate();
+        ValidateBcrInputs(request.BaseColor, request.Roughness);
+        ValidateNmoInputs(request.Normal, request.Metallic, request.AmbientOcclusion);
 
         ImageValidation.EnsureSameDimensions(request.BaseColor, request.Normal, "Normal");
-        ImageValidation.EnsureSameDimensions(request.BaseColor, request.Roughness, "Roughness");
+    }
 
-        if (request.Metallic is not null)
+    private static void ValidateBcrInputs(TextureImage baseColor, TextureImage? roughness)
+    {
+        baseColor.Validate();
+
+        if (roughness is not null)
         {
-            request.Metallic.Validate();
-            ImageValidation.EnsureSameDimensions(request.BaseColor, request.Metallic, "Metallic");
+            roughness.Validate();
+            ImageValidation.EnsureSameDimensions(baseColor, roughness, "Roughness");
+        }
+    }
+
+    private static void ValidateNmoInputs(TextureImage normal, TextureImage? metallic, TextureImage? ambientOcclusion)
+    {
+        normal.Validate();
+
+        if (metallic is not null)
+        {
+            metallic.Validate();
+            ImageValidation.EnsureSameDimensions(normal, metallic, "Metallic");
         }
 
-        if (request.AmbientOcclusion is not null)
+        if (ambientOcclusion is not null)
         {
-            ImageValidation.EnsureSameDimensions(request.BaseColor, request.AmbientOcclusion, "Ambient Occlusion");
+            ambientOcclusion.Validate();
+            ImageValidation.EnsureSameDimensions(normal, ambientOcclusion, "Ambient Occlusion");
         }
     }
 
@@ -77,6 +128,23 @@ public sealed class EddsPacker
         {
             throw new ChannelPackingException(
                 $"Output file already exists: {string.Join(", ", existing)}. Choose overwrite or change the file name.");
+        }
+    }
+
+    private static void EnsureCanWriteOutput(string outputPath, bool overwriteExisting)
+    {
+        if (!overwriteExisting && File.Exists(outputPath))
+        {
+            throw new ChannelPackingException(
+                $"Output file already exists: {Path.GetFileName(outputPath)}. Choose overwrite or change the file name.");
+        }
+    }
+
+    private static void EnsureOutputDirectoryExists(string outputDirectory)
+    {
+        if (!Directory.Exists(outputDirectory))
+        {
+            throw new ChannelPackingException("The output directory could not be found.");
         }
     }
 }

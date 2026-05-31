@@ -69,6 +69,17 @@ public partial class MainWindow : Window
         });
     }
 
+    private void ClearUnpackImageClick(object sender, RoutedEventArgs e)
+    {
+        _unpackSource = null;
+        _unpackedChannels = null;
+        UnpackPathText.Text = "Drop image here or choose a file.";
+        UnpackPreviewImage.Source = null;
+        ClearUnpackPreviews();
+        UnpackProgress.Value = 0;
+        SetFeedback(UnpackFeedbackText, "Source image cleared.", isError: false);
+    }
+
     private async void UnpackImageClick(object sender, RoutedEventArgs e)
     {
         await RunWithProgressAsync(UnpackProgress, UnpackFeedbackText, async () =>
@@ -218,12 +229,28 @@ public partial class MainWindow : Window
     {
         foreach (var channel in Enum.GetValues<TextureChannel>())
         {
-            _packSlots[channel] = new SlotState();
-            SetPackSlotUi(channel, null, null);
+            ClearPackSlot(channel);
         }
 
         PackProgress.Value = 0;
         SetFeedback(PackFeedbackText, "Pack slots cleared.", isError: false);
+    }
+
+    private void ClearPackSlotClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is string tag)
+        {
+            var channel = ParseTextureChannel(tag);
+            ClearPackSlot(channel);
+            PackProgress.Value = 0;
+            SetFeedback(PackFeedbackText, $"{channel} slot cleared.", isError: false);
+        }
+    }
+
+    private void ClearPackSlot(TextureChannel channel)
+    {
+        _packSlots[channel] = new SlotState();
+        SetPackSlotUi(channel, null, null);
     }
 
     private async void ChooseEddsSlotClick(object sender, RoutedEventArgs e)
@@ -263,11 +290,26 @@ public partial class MainWindow : Window
 
     private async void PackEddsClick(object sender, RoutedEventArgs e)
     {
-        EddsPackRequest request;
+        await PackEddsAsync(EddsPackMode.Both);
+    }
+
+    private async void PackEddsBcrOnlyClick(object sender, RoutedEventArgs e)
+    {
+        await PackEddsAsync(EddsPackMode.BcrOnly);
+    }
+
+    private async void PackEddsNmoOnlyClick(object sender, RoutedEventArgs e)
+    {
+        await PackEddsAsync(EddsPackMode.NmoOnly);
+    }
+
+    private async Task PackEddsAsync(EddsPackMode mode)
+    {
+        EddsPackJob job;
 
         try
         {
-            request = BuildEddsPackRequest(overwriteExisting: false);
+            job = BuildEddsPackJob(mode, overwriteExisting: false);
         }
         catch (ChannelPackingException exception)
         {
@@ -275,8 +317,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var outputPaths = EddsPacker.GetOutputPaths(request.OutputDirectory, request.OutputName);
-        var existingOutputFiles = ExistingOutputFiles(outputPaths).ToArray();
+        var outputPaths = EddsPacker.GetOutputPaths(job.OutputDirectory, job.OutputName);
+        var existingOutputFiles = ExistingOutputFiles(outputPaths, mode).ToArray();
 
         if (existingOutputFiles.Length > 0)
         {
@@ -288,7 +330,7 @@ public partial class MainWindow : Window
             var answer = MessageBox.Show(
                 this,
                 message,
-                "Overwrite EDDS outputs?",
+                "Overwrite Enfusion outputs?",
                 MessageBoxButton.OKCancel,
                 MessageBoxImage.Warning);
 
@@ -298,14 +340,14 @@ public partial class MainWindow : Window
                 return;
             }
 
-            request = request with { OverwriteExisting = true };
+            job = job with { OverwriteExisting = true };
         }
 
         await RunWithProgressAsync(EddsProgress, EddsFeedbackText, async () =>
         {
             var packer = new EddsPacker(_codec);
-            var result = await Task.Run(() => packer.PackAndSave(request));
-            SetFeedback(EddsFeedbackText, $"Saved {Path.GetFileName(result.BcrPath)} and {Path.GetFileName(result.NmoPath)} to {request.OutputDirectory}.", isError: false);
+            var savedPaths = await Task.Run(() => SaveEddsJob(packer, job));
+            SetFeedback(EddsFeedbackText, $"Saved {FormatSavedFileNames(savedPaths)} to {job.OutputDirectory}.", isError: false);
         });
     }
 
@@ -320,6 +362,22 @@ public partial class MainWindow : Window
         EddsOutputNameTextBox.Text = string.Empty;
         EddsProgress.Value = 0;
         SetFeedback(EddsFeedbackText, "Images and file name cleared.", isError: false);
+    }
+
+    private void ClearEddsSlotClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.Tag is string slotName)
+        {
+            ClearEddsSlot(slotName);
+            EddsProgress.Value = 0;
+            SetFeedback(EddsFeedbackText, $"{DisplayEddsSlotName(slotName)} cleared.", isError: false);
+        }
+    }
+
+    private void ClearEddsSlot(string slotName)
+    {
+        _eddsSlots[slotName] = new SlotState();
+        SetEddsSlotUi(slotName, null, null);
     }
 
     private void FileDragOver(object sender, DragEventArgs e)
@@ -350,28 +408,23 @@ public partial class MainWindow : Window
         return image;
     }
 
-    private EddsPackRequest BuildEddsPackRequest(bool overwriteExisting)
+    private EddsPackJob BuildEddsPackJob(EddsPackMode mode, bool overwriteExisting)
     {
-        var baseColor = RequiredEddsImage("BaseColor");
-        var normal = RequiredEddsImage("Normal");
-        var roughness = RequiredEddsImage("Roughness");
+        var baseColor = mode is EddsPackMode.Both or EddsPackMode.BcrOnly
+            ? RequiredEddsImage("BaseColor")
+            : _eddsSlots["BaseColor"].Image;
+        var normal = mode is EddsPackMode.Both or EddsPackMode.NmoOnly
+            ? RequiredEddsImage("Normal")
+            : _eddsSlots["Normal"].Image;
+        var roughness = _eddsSlots["Roughness"].Image;
         var metallic = _eddsSlots["Metallic"].Image;
         var ao = _eddsSlots["AmbientOcclusion"].Image;
-
-        if (baseColor.SourcePath is null)
-        {
-            throw new ChannelPackingException("Base Color must be loaded from a file.");
-        }
-
-        var outputDirectory = Path.GetDirectoryName(baseColor.SourcePath);
-        if (string.IsNullOrWhiteSpace(outputDirectory))
-        {
-            throw new ChannelPackingException("Could not find the Base Color directory.");
-        }
+        var outputDirectory = GetEddsOutputDirectory(mode, baseColor, normal);
 
         EddsPacker.GetOutputPaths(outputDirectory, EddsOutputNameTextBox.Text);
 
-        return new EddsPackRequest(
+        return new EddsPackJob(
+            mode,
             baseColor,
             normal,
             roughness,
@@ -382,14 +435,88 @@ public partial class MainWindow : Window
             overwriteExisting);
     }
 
-    private static IEnumerable<string> ExistingOutputFiles(EddsPackResult outputPaths)
+    private static string GetEddsOutputDirectory(EddsPackMode mode, TextureImage? baseColor, TextureImage? normal)
     {
-        if (File.Exists(outputPaths.BcrPath))
+        if (mode == EddsPackMode.NmoOnly && baseColor?.SourcePath is null)
+        {
+            return SourceDirectory(normal ?? throw new ChannelPackingException("Normal is required."), "Normal");
+        }
+
+        return SourceDirectory(baseColor ?? throw new ChannelPackingException("Base Color is required."), "Base Color");
+    }
+
+    private static string SourceDirectory(TextureImage image, string imageName)
+    {
+        if (image.SourcePath is null)
+        {
+            throw new ChannelPackingException($"{imageName} must be loaded from a file.");
+        }
+
+        var outputDirectory = Path.GetDirectoryName(image.SourcePath);
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+        {
+            throw new ChannelPackingException($"Could not find the {imageName} directory.");
+        }
+
+        return outputDirectory;
+    }
+
+    private static string[] SaveEddsJob(EddsPacker packer, EddsPackJob job)
+    {
+        return job.Mode switch
+        {
+            EddsPackMode.Both => SaveBothEddsOutputs(packer, job),
+            EddsPackMode.BcrOnly =>
+            [
+                packer.PackBcrAndSave(
+                    job.BaseColor ?? throw new ChannelPackingException("Base Color is required."),
+                    job.Roughness,
+                    job.OutputName,
+                    job.OutputDirectory,
+                    job.OverwriteExisting)
+            ],
+            EddsPackMode.NmoOnly =>
+            [
+                packer.PackNmoAndSave(
+                    job.Normal ?? throw new ChannelPackingException("Normal is required."),
+                    job.Metallic,
+                    job.AmbientOcclusion,
+                    job.OutputName,
+                    job.OutputDirectory,
+                    job.OverwriteExisting)
+            ],
+            _ => throw new ChannelPackingException("Unknown Enfusion pack mode.")
+        };
+    }
+
+    private static string[] SaveBothEddsOutputs(EddsPacker packer, EddsPackJob job)
+    {
+        var result = packer.PackAndSave(new EddsPackRequest(
+            job.BaseColor ?? throw new ChannelPackingException("Base Color is required."),
+            job.Normal ?? throw new ChannelPackingException("Normal is required."),
+            job.Roughness,
+            job.Metallic,
+            job.AmbientOcclusion,
+            job.OutputName,
+            job.OutputDirectory,
+            job.OverwriteExisting));
+
+        return [result.BcrPath, result.NmoPath];
+    }
+
+    private static string FormatSavedFileNames(IEnumerable<string> paths)
+    {
+        return string.Join(" and ", paths.Select(path => Path.GetFileName(path)));
+    }
+
+    private static IEnumerable<string> ExistingOutputFiles(EddsPackResult outputPaths, EddsPackMode mode)
+    {
+        if ((mode == EddsPackMode.Both || mode == EddsPackMode.BcrOnly) && File.Exists(outputPaths.BcrPath))
         {
             yield return outputPaths.BcrPath;
         }
 
-        if (File.Exists(outputPaths.NmoPath))
+        if ((mode == EddsPackMode.Both || mode == EddsPackMode.NmoOnly) && File.Exists(outputPaths.NmoPath))
         {
             yield return outputPaths.NmoPath;
         }
@@ -611,8 +738,26 @@ public partial class MainWindow : Window
 
     private static bool IsOptionalEddsSlot(string slotName)
     {
-        return slotName is "Metallic" or "AmbientOcclusion";
+        return slotName is "Roughness" or "Metallic" or "AmbientOcclusion";
     }
+
+    private enum EddsPackMode
+    {
+        Both,
+        BcrOnly,
+        NmoOnly
+    }
+
+    private sealed record EddsPackJob(
+        EddsPackMode Mode,
+        TextureImage? BaseColor,
+        TextureImage? Normal,
+        TextureImage? Roughness,
+        TextureImage? Metallic,
+        TextureImage? AmbientOcclusion,
+        string OutputName,
+        string OutputDirectory,
+        bool OverwriteExisting);
 
     private sealed record SlotState(TextureImage? Image = null, string? Path = null);
 }

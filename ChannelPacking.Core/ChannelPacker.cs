@@ -28,17 +28,21 @@ public static class ChannelPacker
         return new TextureImage(reference.Width, reference.Height, output);
     }
 
-    public static TextureImage PackEddsBcr(TextureImage baseColor, TextureImage roughness)
+    public static TextureImage PackEddsBcr(TextureImage baseColor, TextureImage? roughness)
     {
         baseColor.Validate();
-        roughness.Validate();
-        ImageValidation.EnsureSameDimensions(baseColor, roughness, "Roughness");
+
+        if (roughness is not null)
+        {
+            roughness.Validate();
+            ImageValidation.EnsureSameDimensions(baseColor, roughness, "Roughness");
+        }
 
         return Pack(new PackRequest(
             new PackSlot(baseColor, TextureChannel.Red),
             new PackSlot(baseColor, TextureChannel.Green),
             new PackSlot(baseColor, TextureChannel.Blue),
-            new PackSlot(roughness, TextureChannel.Red)));
+            roughness is null ? null : new PackSlot(roughness, TextureChannel.Red)));
     }
 
     public static TextureImage PackEddsNmo(TextureImage normal, TextureImage? metallic, TextureImage? ambientOcclusion)
