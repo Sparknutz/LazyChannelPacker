@@ -240,7 +240,7 @@
 
                     <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,18">
                         <TextBlock FontSize="20" FontWeight="SemiBold" Text="Unpack Channels" />
-                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource TextSecondaryBrush}" Text="Drop one PNG, JPG, or TGA image and export R, G, B, and A as grayscale images." />
+                        <TextBlock Margin="0,4,0,0" Foreground="{StaticResource TextSecondaryBrush}" Text="Drop one PNG, JPG, TGA, or TIFF image and export R, G, B, and A as grayscale images." />
                     </StackPanel>
 
                     <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,24,0">

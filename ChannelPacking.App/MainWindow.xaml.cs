@@ -572,7 +572,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Filter = "Images (*.png;*.jpg;*.jpeg;*.tga)|*.png;*.jpg;*.jpeg;*.tga|All files (*.*)|*.*",
+            Filter = "Images (*.png;*.jpg;*.jpeg;*.tga;*.tif;*.tiff)|*.png;*.jpg;*.jpeg;*.tga;*.tif;*.tiff|All files (*.*)|*.*",
             Multiselect = false
         };
 
@@ -584,7 +584,7 @@ public partial class MainWindow : Window
         var dialog = new SaveFileDialog
         {
             FileName = suggestedFileName,
-            Filter = "PNG image (*.png)|*.png|TGA image (*.tga)|*.tga",
+            Filter = "PNG image (*.png)|*.png|TGA image (*.tga)|*.tga|TIFF image (*.tif;*.tiff)|*.tif;*.tiff",
             DefaultExt = ".png",
             AddExtension = true,
             OverwritePrompt = true
@@ -623,9 +623,12 @@ public partial class MainWindow : Window
 
     private static OutputFormat OutputFormatFromPath(string path)
     {
-        return string.Equals(Path.GetExtension(path), ".tga", StringComparison.OrdinalIgnoreCase)
-            ? OutputFormat.Tga
-            : OutputFormat.Png;
+        return Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".tga" => OutputFormat.Tga,
+            ".tif" or ".tiff" => OutputFormat.Tiff,
+            _ => OutputFormat.Png
+        };
     }
 
     private static BitmapSource ToBitmapSource(TextureImage image)

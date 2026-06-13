@@ -70,6 +70,7 @@ public sealed class MagickImageCodec : IImageCodec
         {
             OutputFormat.Png => MagickFormat.Png,
             OutputFormat.Tga => MagickFormat.Tga,
+            OutputFormat.Tiff => MagickFormat.Tiff,
             _ => throw new ChannelPackingException("Unsupported output format.")
         };
     }

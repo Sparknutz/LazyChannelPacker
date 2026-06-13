@@ -20,7 +20,7 @@ No installer is required.
 
 ## Features
 
-- Unpack PNG, JPG, JPEG, and TGA images into R, G, B, and A grayscale channels.
+- Unpack PNG, JPG, JPEG, TGA, TIF, and TIFF images into R, G, B, and A grayscale channels.
 - Pack separate images into custom R, G, B, and A output channels.
 - Use the Enfusion Packer tab to create:
   - `<name>_BCR.png` from Base Color RGB plus Roughness alpha.

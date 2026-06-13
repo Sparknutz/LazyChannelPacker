@@ -292,6 +292,35 @@ public sealed class ChannelPackingCoreTests
         }
     }
 
+    [Theory]
+    [InlineData("roundtrip.tif")]
+    [InlineData("roundtrip.tiff")]
+    public void MagickCodec_RoundTripsTiffRgbaData(string fileName)
+    {
+        var codec = new MagickImageCodec();
+        var outputDirectory = Path.Combine(Path.GetTempPath(), $"channel-packing-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(outputDirectory);
+        var path = Path.Combine(outputDirectory, fileName);
+
+        try
+        {
+            var image = CreateImage(2, 1,
+                10, 20, 30, 40,
+                50, 60, 70, 255);
+
+            codec.Save(image, path, OutputFormat.Tiff);
+            var loaded = codec.Load(path);
+
+            Assert.Equal(image.Width, loaded.Width);
+            Assert.Equal(image.Height, loaded.Height);
+            Assert.Equal(image.Rgba, loaded.Rgba);
+        }
+        finally
+        {
+            Directory.Delete(outputDirectory, recursive: true);
+        }
+    }
+
     [Fact]
     public void Pack_RejectsDimensionMismatch()
     {

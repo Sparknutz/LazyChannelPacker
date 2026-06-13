@@ -7,7 +7,9 @@ public static class ImageValidation
         ".png",
         ".jpg",
         ".jpeg",
-        ".tga"
+        ".tga",
+        ".tif",
+        ".tiff"
     };
 
     public static void EnsureSupportedInputPath(string path)
@@ -25,7 +27,7 @@ public static class ImageValidation
         var extension = Path.GetExtension(path);
         if (!SupportedInputExtensions.Contains(extension))
         {
-            throw new ChannelPackingException("Supported image formats are PNG, JPG, JPEG, and TGA.");
+            throw new ChannelPackingException("Supported image formats are PNG, JPG, JPEG, TGA, TIF, and TIFF.");
         }
     }
 
