@@ -627,7 +627,7 @@
                         <TextBox x:Name="EddsOutputNameTextBox" Grid.Row="1" Margin="0,6,0,0" />
                         <TextBlock Grid.Row="2" Margin="0,6,0,0"
                                    Foreground="{StaticResource TextSecondaryBrush}"
-                                   Text="Saves requested files as &lt;name&gt;_BCR.png and/or &lt;name&gt;_NMO.png." />
+                                   Text="Saves requested files with _BCR and/or _NMO suffixes; TIFF inputs save as TIFF." />
 
                         <Grid Grid.Row="3" Margin="0,18,0,0">
                             <Grid.RowDefinitions>

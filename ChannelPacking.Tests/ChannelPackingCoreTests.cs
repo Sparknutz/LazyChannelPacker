@@ -1,4 +1,5 @@
 using ChannelPacking.Core;
+using ImageMagick;
 
 namespace ChannelPacking.Tests;
 
@@ -136,6 +137,41 @@ public sealed class ChannelPackingCoreTests
             Assert.EndsWith("painted_metal_NMO.png", result.NmoPath);
             Assert.Equal(OutputFormat.Png, codec.Saved[0].Format);
             Assert.Equal(OutputFormat.Png, codec.Saved[1].Format);
+        }
+        finally
+        {
+            Directory.Delete(outputDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void EddsPacker_UsesTiffOutputsForTiffContributingInputs()
+    {
+        var codec = new CapturingCodec();
+        var outputDirectory = Path.Combine(Path.GetTempPath(), $"channel-packing-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(outputDirectory);
+
+        try
+        {
+            var baseColor = CreateImageWithSourcePath(Path.Combine(outputDirectory, "base.png"), 1, 1, 1, 2, 3, 4);
+            var roughness = CreateImageWithSourcePath(Path.Combine(outputDirectory, "roughness.tiff"), 1, 1, 101, 102, 103, 104);
+            var normal = CreateImageWithSourcePath(Path.Combine(outputDirectory, "normal.png"), 1, 1, 10, 20, 30, 40);
+            var metallic = CreateImageWithSourcePath(Path.Combine(outputDirectory, "metallic.tif"), 1, 1, 50, 60, 70, 80);
+            var packer = new EddsPacker(codec);
+
+            var result = packer.PackAndSave(new EddsPackRequest(
+                baseColor,
+                normal,
+                roughness,
+                metallic,
+                null,
+                "mixed inputs",
+                outputDirectory));
+
+            Assert.EndsWith("mixed_inputs_BCR.tiff", result.BcrPath);
+            Assert.EndsWith("mixed_inputs_NMO.tiff", result.NmoPath);
+            Assert.Equal(OutputFormat.Tiff, codec.Saved[0].Format);
+            Assert.Equal(OutputFormat.Tiff, codec.Saved[1].Format);
         }
         finally
         {
@@ -309,8 +345,11 @@ public sealed class ChannelPackingCoreTests
                 50, 60, 70, 255);
 
             codec.Save(image, path, OutputFormat.Tiff);
+            using var saved = new MagickImage(path);
             var loaded = codec.Load(path);
 
+            Assert.Equal(ColorSpace.sRGB, saved.ColorSpace);
+            Assert.NotNull(saved.GetColorProfile());
             Assert.Equal(image.Width, loaded.Width);
             Assert.Equal(image.Height, loaded.Height);
             Assert.Equal(image.Rgba, loaded.Rgba);
@@ -339,6 +378,11 @@ public sealed class ChannelPackingCoreTests
     private static TextureImage CreateImage(int width, int height, params byte[] rgba)
     {
         return new TextureImage(width, height, rgba);
+    }
+
+    private static TextureImage CreateImageWithSourcePath(string sourcePath, int width, int height, params byte[] rgba)
+    {
+        return new TextureImage(width, height, rgba, sourcePath);
     }
 
     private sealed class CapturingCodec : IImageCodec

@@ -15,7 +15,9 @@ public sealed class EddsPacker
 
         EnsureOutputDirectoryExists(request.OutputDirectory);
 
-        var outputPaths = GetOutputPaths(request.OutputDirectory, request.OutputName);
+        var bcrFormat = OutputFormats.PreferredForTiffSources(request.BaseColor, request.Roughness);
+        var nmoFormat = OutputFormats.PreferredForTiffSources(request.Normal, request.Metallic, request.AmbientOcclusion);
+        var outputPaths = GetOutputPaths(request.OutputDirectory, request.OutputName, bcrFormat, nmoFormat);
 
         ValidateAllEddsDimensions(request);
         EnsureCanWriteOutputs(outputPaths, request.OverwriteExisting);
@@ -23,8 +25,8 @@ public sealed class EddsPacker
         var bcr = ChannelPacker.PackEddsBcr(request.BaseColor, request.Roughness);
         var nmo = ChannelPacker.PackEddsNmo(request.Normal, request.Metallic, request.AmbientOcclusion);
 
-        _codec.Save(bcr, outputPaths.BcrPath, OutputFormat.Png);
-        _codec.Save(nmo, outputPaths.NmoPath, OutputFormat.Png);
+        _codec.Save(bcr, outputPaths.BcrPath, bcrFormat);
+        _codec.Save(nmo, outputPaths.NmoPath, nmoFormat);
 
         return outputPaths;
     }
@@ -39,11 +41,12 @@ public sealed class EddsPacker
         EnsureOutputDirectoryExists(outputDirectory);
         ValidateBcrInputs(baseColor, roughness);
 
-        var outputPath = GetOutputPaths(outputDirectory, outputName).BcrPath;
+        var outputFormat = OutputFormats.PreferredForTiffSources(baseColor, roughness);
+        var outputPath = GetOutputPaths(outputDirectory, outputName, bcrFormat: outputFormat).BcrPath;
         EnsureCanWriteOutput(outputPath, overwriteExisting);
 
         var bcr = ChannelPacker.PackEddsBcr(baseColor, roughness);
-        _codec.Save(bcr, outputPath, OutputFormat.Png);
+        _codec.Save(bcr, outputPath, outputFormat);
 
         return outputPath;
     }
@@ -59,21 +62,26 @@ public sealed class EddsPacker
         EnsureOutputDirectoryExists(outputDirectory);
         ValidateNmoInputs(normal, metallic, ambientOcclusion);
 
-        var outputPath = GetOutputPaths(outputDirectory, outputName).NmoPath;
+        var outputFormat = OutputFormats.PreferredForTiffSources(normal, metallic, ambientOcclusion);
+        var outputPath = GetOutputPaths(outputDirectory, outputName, nmoFormat: outputFormat).NmoPath;
         EnsureCanWriteOutput(outputPath, overwriteExisting);
 
         var nmo = ChannelPacker.PackEddsNmo(normal, metallic, ambientOcclusion);
-        _codec.Save(nmo, outputPath, OutputFormat.Png);
+        _codec.Save(nmo, outputPath, outputFormat);
 
         return outputPath;
     }
 
-    public static EddsPackResult GetOutputPaths(string outputDirectory, string outputName)
+    public static EddsPackResult GetOutputPaths(
+        string outputDirectory,
+        string outputName,
+        OutputFormat bcrFormat = OutputFormat.Png,
+        OutputFormat nmoFormat = OutputFormat.Png)
     {
         var sanitizedName = ImageValidation.SanitizeFileNameStem(outputName, "Output file name");
         return new EddsPackResult(
-            Path.Combine(outputDirectory, $"{sanitizedName}_BCR.png"),
-            Path.Combine(outputDirectory, $"{sanitizedName}_NMO.png"));
+            Path.Combine(outputDirectory, $"{sanitizedName}_BCR{OutputFormats.ExtensionFor(bcrFormat)}"),
+            Path.Combine(outputDirectory, $"{sanitizedName}_NMO{OutputFormats.ExtensionFor(nmoFormat)}"));
     }
 
     private static void ValidateAllEddsDimensions(EddsPackRequest request)

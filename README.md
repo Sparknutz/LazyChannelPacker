@@ -22,9 +22,10 @@ No installer is required.
 
 - Unpack PNG, JPG, JPEG, TGA, TIF, and TIFF images into R, G, B, and A grayscale channels.
 - Pack separate images into custom R, G, B, and A output channels.
+- TIFF inputs default to TIFF outputs with an embedded sRGB profile.
 - Use the Enfusion Packer tab to create:
-  - `<name>_BCR.png` from Base Color RGB plus Roughness alpha.
-  - `<name>_NMO.png` from Normal RG plus optional Metallic and optional Ambient Occlusion.
+  - `<name>_BCR` from Base Color RGB plus Roughness alpha.
+  - `<name>_NMO` from Normal RG plus optional Metallic and optional Ambient Occlusion.
 - Missing Metallic fills black.
 - Missing Ambient Occlusion fills opaque white.
 - Input dimensions must match exactly.
@@ -36,7 +37,7 @@ For Enfusion texture workflows:
 - `_BCR`: RGB = Base Color, A = Roughness
 - `_NMO`: R/G = Normal, B = Metallic, A = Ambient Occlusion
 
-The app creates packed PNG source textures. Import them through Workbench to generate `.edds` files.
+The app creates packed PNG or TIFF source textures. Import them through Workbench to generate `.edds` files.
 
 This project is unofficial and is not affiliated with Bohemia Interactive.
 

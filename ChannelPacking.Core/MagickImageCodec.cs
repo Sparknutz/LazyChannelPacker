@@ -56,6 +56,12 @@ public sealed class MagickImageCodec : IImageCodec
             };
 
             output.Strip();
+            if (format == OutputFormat.Tiff)
+            {
+                output.ColorSpace = ColorSpace.sRGB;
+                output.SetProfile(ColorProfiles.SRGB);
+            }
+
             output.Write(path);
         }
         catch (Exception exception)

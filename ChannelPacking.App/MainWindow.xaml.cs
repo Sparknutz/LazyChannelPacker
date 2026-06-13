@@ -117,12 +117,14 @@ public partial class MainWindow : Window
             }
 
             var stem = Path.GetFileNameWithoutExtension(_unpackSource.SourcePath);
+            var format = OutputFormats.PreferredForTiffSource(_unpackSource);
+            var extension = OutputFormats.ExtensionFor(format);
             await Task.Run(() =>
             {
-                SaveUnpackedChannel(TextureChannel.Red, Path.Combine(directory, $"{stem}_R.png"));
-                SaveUnpackedChannel(TextureChannel.Green, Path.Combine(directory, $"{stem}_G.png"));
-                SaveUnpackedChannel(TextureChannel.Blue, Path.Combine(directory, $"{stem}_B.png"));
-                SaveUnpackedChannel(TextureChannel.Alpha, Path.Combine(directory, $"{stem}_A.png"));
+                SaveUnpackedChannel(TextureChannel.Red, Path.Combine(directory, $"{stem}_R{extension}"), format);
+                SaveUnpackedChannel(TextureChannel.Green, Path.Combine(directory, $"{stem}_G{extension}"), format);
+                SaveUnpackedChannel(TextureChannel.Blue, Path.Combine(directory, $"{stem}_B{extension}"), format);
+                SaveUnpackedChannel(TextureChannel.Alpha, Path.Combine(directory, $"{stem}_A{extension}"), format);
             });
 
             SetFeedback(UnpackFeedbackText, $"Saved channels to {directory}.", isError: false);
@@ -144,14 +146,17 @@ public partial class MainWindow : Window
             }
 
             var channel = ParseTextureChannel(channelName);
-            var path = ChooseOutputFile($"{channelName}.png");
+            var preferredFormat = _unpackSource is null
+                ? OutputFormat.Png
+                : OutputFormats.PreferredForTiffSource(_unpackSource);
+            var path = ChooseOutputFile($"{channelName}{OutputFormats.ExtensionFor(preferredFormat)}", preferredFormat);
             if (path is null)
             {
                 SetFeedback(UnpackFeedbackText, "Save cancelled.", isError: false);
                 return;
             }
 
-            var format = OutputFormatFromPath(path);
+            var format = OutputFormats.FromPath(path);
             await Task.Run(() => _codec.Save(_unpackedChannels[channel], path, format));
             SetFeedback(UnpackFeedbackText, $"Saved {channelName} channel.", isError: false);
         });
@@ -201,7 +206,8 @@ public partial class MainWindow : Window
                 throw new ChannelPackingException("Add at least one channel image before packing.");
             }
 
-            var outputPath = ChooseOutputFile("packed.png");
+            var preferredFormat = PreferredPackedOutputFormat();
+            var outputPath = ChooseOutputFile($"packed{OutputFormats.ExtensionFor(preferredFormat)}", preferredFormat);
             if (outputPath is null)
             {
                 SetFeedback(PackFeedbackText, "Pack cancelled.", isError: false);
@@ -214,7 +220,7 @@ public partial class MainWindow : Window
                 BuildPackSlot(TextureChannel.Blue, PackBlueChannel, PackBlueInvert),
                 BuildPackSlot(TextureChannel.Alpha, PackAlphaChannel, PackAlphaInvert));
 
-            var format = OutputFormatFromPath(outputPath);
+            var format = OutputFormats.FromPath(outputPath);
             await Task.Run(() =>
             {
                 var packed = ChannelPacker.Pack(request);
@@ -317,7 +323,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var outputPaths = EddsPacker.GetOutputPaths(job.OutputDirectory, job.OutputName);
+        var outputPaths = EddsPacker.GetOutputPaths(job.OutputDirectory, job.OutputName, job.BcrOutputFormat, job.NmoOutputFormat);
         var existingOutputFiles = ExistingOutputFiles(outputPaths, mode).ToArray();
 
         if (existingOutputFiles.Length > 0)
@@ -420,8 +426,10 @@ public partial class MainWindow : Window
         var metallic = _eddsSlots["Metallic"].Image;
         var ao = _eddsSlots["AmbientOcclusion"].Image;
         var outputDirectory = GetEddsOutputDirectory(mode, baseColor, normal);
+        var bcrFormat = OutputFormats.PreferredForTiffSources(baseColor, roughness);
+        var nmoFormat = OutputFormats.PreferredForTiffSources(normal, metallic, ao);
 
-        EddsPacker.GetOutputPaths(outputDirectory, EddsOutputNameTextBox.Text);
+        EddsPacker.GetOutputPaths(outputDirectory, EddsOutputNameTextBox.Text, bcrFormat, nmoFormat);
 
         return new EddsPackJob(
             mode,
@@ -432,7 +440,9 @@ public partial class MainWindow : Window
             ao,
             EddsOutputNameTextBox.Text,
             outputDirectory,
-            overwriteExisting);
+            overwriteExisting,
+            bcrFormat,
+            nmoFormat);
     }
 
     private static string GetEddsOutputDirectory(EddsPackMode mode, TextureImage? baseColor, TextureImage? normal)
@@ -509,6 +519,11 @@ public partial class MainWindow : Window
         return string.Join(" and ", paths.Select(path => Path.GetFileName(path)));
     }
 
+    private OutputFormat PreferredPackedOutputFormat()
+    {
+        return OutputFormats.PreferredForTiffSources(_packSlots.Values.Select(slot => slot.Image).ToArray());
+    }
+
     private static IEnumerable<string> ExistingOutputFiles(EddsPackResult outputPaths, EddsPackMode mode)
     {
         if ((mode == EddsPackMode.Both || mode == EddsPackMode.BcrOnly) && File.Exists(outputPaths.BcrPath))
@@ -522,14 +537,14 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SaveUnpackedChannel(TextureChannel channel, string path)
+    private void SaveUnpackedChannel(TextureChannel channel, string path, OutputFormat format)
     {
         if (_unpackedChannels is null)
         {
             throw new ChannelPackingException("Unpack an image before saving channels.");
         }
 
-        _codec.Save(_unpackedChannels[channel], path, OutputFormat.Png);
+        _codec.Save(_unpackedChannels[channel], path, format);
     }
 
     private static async Task RunWithProgressAsync(ProgressBar progress, TextBlock feedback, Func<Task> action)
@@ -579,13 +594,14 @@ public partial class MainWindow : Window
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
-    private static string? ChooseOutputFile(string suggestedFileName)
+    private static string? ChooseOutputFile(string suggestedFileName, OutputFormat preferredFormat)
     {
         var dialog = new SaveFileDialog
         {
             FileName = suggestedFileName,
             Filter = "PNG image (*.png)|*.png|TGA image (*.tga)|*.tga|TIFF image (*.tif;*.tiff)|*.tif;*.tiff",
-            DefaultExt = ".png",
+            FilterIndex = SaveDialogFilterIndex(preferredFormat),
+            DefaultExt = OutputFormats.ExtensionFor(preferredFormat),
             AddExtension = true,
             OverwritePrompt = true
         };
@@ -621,13 +637,14 @@ public partial class MainWindow : Window
         };
     }
 
-    private static OutputFormat OutputFormatFromPath(string path)
+    private static int SaveDialogFilterIndex(OutputFormat format)
     {
-        return Path.GetExtension(path).ToLowerInvariant() switch
+        return format switch
         {
-            ".tga" => OutputFormat.Tga,
-            ".tif" or ".tiff" => OutputFormat.Tiff,
-            _ => OutputFormat.Png
+            OutputFormat.Png => 1,
+            OutputFormat.Tga => 2,
+            OutputFormat.Tiff => 3,
+            _ => 1
         };
     }
 
@@ -760,7 +777,9 @@ public partial class MainWindow : Window
         TextureImage? AmbientOcclusion,
         string OutputName,
         string OutputDirectory,
-        bool OverwriteExisting);
+        bool OverwriteExisting,
+        OutputFormat BcrOutputFormat,
+        OutputFormat NmoOutputFormat);
 
     private sealed record SlotState(TextureImage? Image = null, string? Path = null);
 }
